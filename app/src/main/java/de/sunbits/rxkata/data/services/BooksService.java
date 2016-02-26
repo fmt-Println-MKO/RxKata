@@ -7,6 +7,7 @@ import java.util.List;
 import de.sunbits.rxkata.data.model.Author;
 import de.sunbits.rxkata.data.model.Book;
 import de.sunbits.rxkata.data.services.backend.BackendBooksService;
+import rx.Observable;
 
 /**
  * Created by matkoch on 26/02/16.
@@ -22,17 +23,17 @@ public class BooksService {
         backendBooksService = new BackendBooksService();
     }
 
-    public List<Book> getBooks() {
+    public Observable<List<Book>> getBooks() {
 
         Log.d(TAG, "getBooks");
 
-        return backendBooksService.getBooks();
+        return Observable.just(backendBooksService.getBooks());
     }
 
-    public Author getAuthor(int id) {
+    public Observable<Author> getAuthor(int id) {
 
         Log.d(TAG, "getAuthor id: " + id);
-        return backendBooksService.getAuthor(id);
+        return Observable.just(backendBooksService.getAuthor(id));
     }
 
     public int insertBook(Book book) {

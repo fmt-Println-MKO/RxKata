@@ -3,7 +3,6 @@ package de.sunbits.rxkata.ui.presenter;
 import android.os.AsyncTask;
 import android.util.Log;
 
-import java.util.ArrayList;
 import java.util.List;
 
 import de.sunbits.rxkata.data.DataManager;
@@ -11,6 +10,10 @@ import de.sunbits.rxkata.data.model.Author;
 import de.sunbits.rxkata.data.model.Book;
 import de.sunbits.rxkata.ui.model.BookWithAuthor;
 import de.sunbits.rxkata.ui.view.activities.MainActivity;
+import rx.Observable;
+import rx.functions.Action1;
+import rx.functions.Func1;
+import rx.functions.Func2;
 
 /**
  * Created by matkoch on 26/02/16.
@@ -29,47 +32,41 @@ public class MainPresenterImpl extends BasePresenter<MainActivity> implements Ma
     public void loadBooks() {
 
 
-        class GetBooksAsyncTask extends AsyncTask<Void, Void, List<BookWithAuthor>> {
-
-            @Override
-            protected List<BookWithAuthor> doInBackground(final Void... params) {
-
-                final List<BookWithAuthor> bookWithAuthors = new ArrayList<BookWithAuthor>();
-                dataManager.getBooks(new DataManager.GetBooksCallback() {
+        Observable<Book> books = dataManager.getBooks()
+                .flatMap(new Func1<List<Book>, Observable<Book>>() {
                     @Override
-                    public void onCallback(final List<Book> books) {
+                    public Observable<Book> call(final List<Book> books) {
 
-
-                        for (final Book book : books) {
-
-                            dataManager.getAuthor(book.getAuthorId(), new DataManager.GetAuthorCallback() {
-                                @Override
-                                public void onCallback(final Author author) {
-
-                                    final BookWithAuthor bookWithAuthor = new BookWithAuthor();
-                                    bookWithAuthor.setBook(book);
-                                    bookWithAuthor.setAuthor(author);
-                                    bookWithAuthors.add(bookWithAuthor);
-                                }
-                            });
-                        }
-
+                        return Observable.from(books);
                     }
                 });
 
-                return bookWithAuthors;
-            }
-
+        Observable<Author> authors = books.flatMap(new Func1<Book, Observable<Author>>() {
             @Override
-            protected void onPostExecute(final List<BookWithAuthor> bookWithAuthors) {
+            public Observable<Author> call(final Book book) {
 
-                Log.d(TAG, "loadBooks - bookWithAuthors" + bookWithAuthors);
-                getMvpView().showBooks(bookWithAuthors);
+                return dataManager.getAuthor(book.getAuthorId());
             }
-        }
+        });
 
-        GetBooksAsyncTask task = new GetBooksAsyncTask();
-        task.execute();
+        Observable.zip(books, authors, new Func2<Book, Author, BookWithAuthor>() {
+            @Override
+            public BookWithAuthor call(final Book book, final Author author) {
+
+                BookWithAuthor bookWithAuthor = new BookWithAuthor();
+                bookWithAuthor.setBook(book);
+                bookWithAuthor.setAuthor(author);
+                return bookWithAuthor;
+            }
+        })
+                .toList()
+                .subscribe(new Action1<List<BookWithAuthor>>() {
+                    @Override
+                    public void call(final List<BookWithAuthor> bookWithAuthors) {
+
+                        getMvpView().showBooks(bookWithAuthors);
+                    }
+                });
 
     }
 
@@ -85,22 +82,23 @@ public class MainPresenterImpl extends BasePresenter<MainActivity> implements Ma
             @Override
             protected Void doInBackground(final Integer... params) {
 
-                dataManager.getAuthor(params[0], new DataManager.GetAuthorCallback() {
-                    @Override
-                    public void onCallback(final Author author) {
-
-                        book.setAuthorId(author.getId());
-
-                        dataManager.insertBook(book, new DataManager.InsertBookCallback() {
+                dataManager.getAuthor(params[0])
+                        .subscribe(new Action1<Author>() {
                             @Override
-                            public void onCallback(final int id) {
+                            public void call(final Author author) {
 
-                                Log.d(TAG, "insertBook - added success");
-                                loadBooks();
+                                book.setAuthorId(author.getId());
+
+                                dataManager.insertBook(book, new DataManager.InsertBookCallback() {
+                                    @Override
+                                    public void onCallback(final int id) {
+
+                                        Log.d(TAG, "insertBook - added success");
+                                        loadBooks();
+                                    }
+                                });
                             }
                         });
-                    }
-                });
                 return null;
             }
         }

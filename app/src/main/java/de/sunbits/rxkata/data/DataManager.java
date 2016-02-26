@@ -6,6 +6,7 @@ import de.sunbits.rxkata.data.model.Author;
 import de.sunbits.rxkata.data.model.Book;
 import de.sunbits.rxkata.data.services.BooksService;
 import de.sunbits.rxkata.data.services.FailingService;
+import rx.Observable;
 
 /**
  * Created by matkoch on 26/02/16.
@@ -21,32 +22,20 @@ public class DataManager {
         failingService = new FailingService();
     }
 
-    public interface GetBooksCallback {
-
-        void onCallback(List<Book> books);
-    }
-
-    public interface GetAuthorCallback {
-
-        void onCallback(Author author);
-    }
 
     public interface InsertBookCallback {
 
         void onCallback(int id);
     }
 
-    public void getBooks(GetBooksCallback callback) {
+    public Observable<List<Book>> getBooks() {
 
-        List<Book> books = booksService.getBooks();
-        callback.onCallback(books);
+        return booksService.getBooks();
     }
 
-    public void getAuthor(int id, GetAuthorCallback callback) {
+    public Observable<Author> getAuthor(int id) {
 
-        Author author = booksService.getAuthor(id);
-
-        callback.onCallback(author);
+        return booksService.getAuthor(id);
     }
 
     public void insertBook(Book book, InsertBookCallback callback) {
