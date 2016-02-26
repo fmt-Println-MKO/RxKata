@@ -11,9 +11,11 @@ import de.sunbits.rxkata.data.model.Book;
 import de.sunbits.rxkata.ui.model.BookWithAuthor;
 import de.sunbits.rxkata.ui.view.activities.MainActivity;
 import rx.Observable;
+import rx.android.schedulers.AndroidSchedulers;
 import rx.functions.Action1;
 import rx.functions.Func1;
 import rx.functions.Func2;
+import rx.schedulers.Schedulers;
 
 /**
  * Created by matkoch on 26/02/16.
@@ -37,33 +39,44 @@ public class MainPresenterImpl extends BasePresenter<MainActivity> implements Ma
                     @Override
                     public Observable<Book> call(final List<Book> books) {
 
+                        Log.d(TAG, "flatMap - getBooks Thread:" + Thread.currentThread().getName());
                         return Observable.from(books);
                     }
-                });
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io());//create new Thread for each Subscriber
 
-        Observable<Author> authors = books.flatMap(new Func1<Book, Observable<Author>>() {
-            @Override
-            public Observable<Author> call(final Book book) {
+        Observable<Author> authors = books // first Subscriber to Observable books
+                .flatMap(new Func1<Book, Observable<Author>>() {
+                    @Override
+                    public Observable<Author> call(final Book book) {
 
-                return dataManager.getAuthor(book.getAuthorId());
-            }
-        });
+                        Log.d(TAG, "flatMap - getAuthor Thread:" + Thread.currentThread().getName());
+                        return dataManager.getAuthor(book.getAuthorId());
+                    }
+                })
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io());
 
-        Observable.zip(books, authors, new Func2<Book, Author, BookWithAuthor>() {
+        Observable.zip(books, authors, new Func2<Book, Author, BookWithAuthor>() { // SECOND Subscriber to Observable books
             @Override
             public BookWithAuthor call(final Book book, final Author author) {
 
+                Log.d(TAG, "zip - Thread:" + Thread.currentThread().getName());
                 BookWithAuthor bookWithAuthor = new BookWithAuthor();
                 bookWithAuthor.setBook(book);
                 bookWithAuthor.setAuthor(author);
                 return bookWithAuthor;
             }
         })
+                .subscribeOn(Schedulers.io())
+                .observeOn(AndroidSchedulers.mainThread())
                 .toList()
                 .subscribe(new Action1<List<BookWithAuthor>>() {
                     @Override
                     public void call(final List<BookWithAuthor> bookWithAuthors) {
 
+                        Log.d(TAG, "subscriber - Thread:" + Thread.currentThread().getName());
                         getMvpView().showBooks(bookWithAuthors);
                     }
                 });

@@ -6,6 +6,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
 import android.support.v7.widget.Toolbar;
+import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -24,6 +25,7 @@ import de.sunbits.rxkata.ui.view.adapter.BooksAdapter;
 public class MainActivityImpl extends AppCompatActivity implements MainActivity {
 
 
+    private static final String TAG = "MainActivityImpl";
     private MainPresenter presenter;
     private RecyclerView recyclerView;
     private BooksAdapter adapter;
@@ -64,7 +66,9 @@ public class MainActivityImpl extends AppCompatActivity implements MainActivity 
 
         super.onResume();
         presenter.attachView(this);
+        Log.d(TAG, "onResume - Thread:" + Thread.currentThread().getName());
         presenter.loadBooks();
+        Log.d(TAG, "onResume - Thread:" + Thread.currentThread().getName());
     }
 
     @Override

@@ -81,6 +81,7 @@ public class BackendBooksService {
     public List<Book> getBooks() {
 
         Log.d(TAG, "getBooks - oh network is slow");
+        Log.d(TAG,"getBooks - Thread:" + Thread.currentThread().getName());
         try {
             Thread.sleep(2000l);
         } catch (InterruptedException e) {
@@ -92,6 +93,7 @@ public class BackendBooksService {
     public Author getAuthor(int id) {
 
         Log.d(TAG, "getAuthor - oh network is slow: id: " + id);
+        Log.d(TAG,"getAuthor - Thread:" + Thread.currentThread().getName());
         try {
             Thread.sleep(1000l);
         } catch (InterruptedException e) {
