@@ -1,5 +1,7 @@
 package de.sunbits.rxkata.data;
 
+import android.util.Log;
+
 import java.util.List;
 
 import de.sunbits.rxkata.data.model.Author;
@@ -7,12 +9,14 @@ import de.sunbits.rxkata.data.model.Book;
 import de.sunbits.rxkata.data.services.BooksService;
 import de.sunbits.rxkata.data.services.FailingService;
 import rx.Observable;
+import rx.functions.Func1;
 
 /**
  * Created by matkoch on 26/02/16.
  */
 public class DataManager {
 
+    private static final String TAG = "DataManager";
     private BooksService booksService;
     private FailingService failingService;
 
@@ -43,5 +47,25 @@ public class DataManager {
         int id = booksService.insertBook(book);
 
         callback.onCallback(id);
+    }
+
+    public Observable<Book> getAvailableBooks() {
+
+        return booksService.getBooks()
+                .flatMap(new Func1<List<Book>, Observable<Book>>() {
+                    @Override
+                    public Observable<Book> call(final List<Book> books) {
+
+                        Log.d(TAG, "flatMap - getAvailableBooks Thread:" + Thread.currentThread().getName());
+                        return Observable.from(books);
+                    }
+                })
+                .filter(new Func1<Book, Boolean>() {
+                    @Override
+                    public Boolean call(final Book book) {
+
+                        return book.isAvailable();
+                    }
+                });
     }
 }

@@ -34,15 +34,7 @@ public class MainPresenterImpl extends BasePresenter<MainActivity> implements Ma
     public void loadBooks() {
 
 
-        Observable<Book> books = dataManager.getBooks()
-                .flatMap(new Func1<List<Book>, Observable<Book>>() {
-                    @Override
-                    public Observable<Book> call(final List<Book> books) {
-
-                        Log.d(TAG, "flatMap - getBooks Thread:" + Thread.currentThread().getName());
-                        return Observable.from(books);
-                    }
-                })
+        Observable<Book> books = dataManager.getAvailableBooks()
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io());//create new Thread for each Subscriber
 
@@ -53,6 +45,13 @@ public class MainPresenterImpl extends BasePresenter<MainActivity> implements Ma
 
                         Log.d(TAG, "flatMap - getAuthor Thread:" + Thread.currentThread().getName());
                         return dataManager.getAuthor(book.getAuthorId());
+                    }
+                })
+                .filter(new Func1<Author, Boolean>() {
+                    @Override
+                    public Boolean call(final Author author) {
+
+                        return author.getAge() > 30;
                     }
                 })
                 .subscribeOn(Schedulers.io())
