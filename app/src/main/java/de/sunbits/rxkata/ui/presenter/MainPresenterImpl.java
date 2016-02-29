@@ -1,6 +1,5 @@
 package de.sunbits.rxkata.ui.presenter;
 
-import android.os.AsyncTask;
 import android.util.Log;
 
 import java.util.List;
@@ -47,13 +46,6 @@ public class MainPresenterImpl extends BasePresenter<MainActivity> implements Ma
                         return dataManager.getAuthor(book.getAuthorId());
                     }
                 })
-                .filter(new Func1<Author, Boolean>() {
-                    @Override
-                    public Boolean call(final Author author) {
-
-                        return author.getAge() > 30;
-                    }
-                })
                 .subscribeOn(Schedulers.io())
                 .observeOn(Schedulers.io());
 
@@ -68,6 +60,13 @@ public class MainPresenterImpl extends BasePresenter<MainActivity> implements Ma
                 return bookWithAuthor;
             }
         })
+                .filter(new Func1<BookWithAuthor, Boolean>() {
+                    @Override
+                    public Boolean call(final BookWithAuthor bookWithAuthor) {
+
+                        return bookWithAuthor.getAuthor().getAge() > 30;
+                    }
+                })
                 .subscribeOn(Schedulers.io())
                 .observeOn(AndroidSchedulers.mainThread())
                 .toList()
@@ -89,32 +88,27 @@ public class MainPresenterImpl extends BasePresenter<MainActivity> implements Ma
         book.setName("New Testbook");
         book.setAvailable(true);
 
-        class InsertBooksAsyncTask extends AsyncTask<Integer, Void, Void> {
 
-            @Override
-            protected Void doInBackground(final Integer... params) {
+        dataManager.getAuthor(1)
+                .subscribeOn(Schedulers.io())
+                .observeOn(Schedulers.io())
+                .flatMap(new Func1<Author, Observable<Integer>>() {
+                    @Override
+                    public Observable<Integer> call(final Author author) {
 
-                dataManager.getAuthor(params[0])
-                        .subscribe(new Action1<Author>() {
-                            @Override
-                            public void call(final Author author) {
+                        book.setAuthorId(author.getId());
+                        return dataManager.insertBook(book);
+                    }
+                })
+                .subscribe(new Action1<Integer>() {
+                    @Override
+                    public void call(final Integer integer) {
 
-                                book.setAuthorId(author.getId());
+                        if (integer > 0) {
+                            loadBooks();
+                        }
+                    }
+                });
 
-                                dataManager.insertBook(book, new DataManager.InsertBookCallback() {
-                                    @Override
-                                    public void onCallback(final int id) {
-
-                                        Log.d(TAG, "insertBook - added success");
-                                        loadBooks();
-                                    }
-                                });
-                            }
-                        });
-                return null;
-            }
-        }
-        InsertBooksAsyncTask task = new InsertBooksAsyncTask();
-        task.execute(1);
     }
 }

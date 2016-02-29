@@ -53,9 +53,16 @@ public class BooksService {
         }); // Why is cache don't bring benefit ?
     }
 
-    public int insertBook(Book book) {
+    public Observable<Integer> insertBook(final Book book) {
 
         Log.d(TAG, "insertBook book:" + book);
-        return backendBooksService.insertBook(book);
+        return Observable.defer(new Func0<Observable<Integer>>() {
+            @Override
+            public Observable<Integer> call() {
+
+                Log.d(TAG, "insertBook - defer Thread: " + Thread.currentThread().getName());
+                return Observable.just(backendBooksService.insertBook(book));
+            }
+        });
     }
 }

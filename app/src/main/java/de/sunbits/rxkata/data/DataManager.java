@@ -26,12 +26,6 @@ public class DataManager {
         failingService = new FailingService();
     }
 
-
-    public interface InsertBookCallback {
-
-        void onCallback(int id);
-    }
-
     public Observable<List<Book>> getBooks() {
 
         return booksService.getBooks();
@@ -42,11 +36,9 @@ public class DataManager {
         return booksService.getAuthor(id);
     }
 
-    public void insertBook(Book book, InsertBookCallback callback) {
+    public Observable<Integer> insertBook(Book book) {
 
-        int id = booksService.insertBook(book);
-
-        callback.onCallback(id);
+        return booksService.insertBook(book);
     }
 
     public Observable<Book> getAvailableBooks() {
